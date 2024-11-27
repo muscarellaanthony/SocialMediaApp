@@ -1,4 +1,5 @@
-import Post from './Post'
+import Post from "./Post"
+
 
 function Feed() {
   return (
