@@ -2,10 +2,10 @@ import { auth } from "@clerk/nextjs/server";
 import Post from "./Post";
 import prisma from "@/lib/client";
 
-const Feed = async ({ username }: { username?: string }) => {
+const ProfileFeed = async ({ username }: { username?: string }) => {
   const { userId } = auth();
 
-  let posts:any[] =[];
+  let posts: any[] = [];
 
   if (username) {
     posts = await prisma.post.findMany({
@@ -33,43 +33,6 @@ const Feed = async ({ username }: { username?: string }) => {
     });
   }
 
-  if (!username && userId) {
-    const following = await prisma.follower.findMany({
-      where: {
-        followerId: userId,
-      },
-      select: {
-        followingId: true,
-      },
-    });
-
-    const followingIds = following.map((f) => f.followingId);
-    const ids = [userId,...followingIds]
-
-    posts = await prisma.post.findMany({
-      where: {
-        userId: {
-          in: ids,
-        },
-      },
-      include: {
-        user: true,
-        likes: {
-          select: {
-            userId: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  }
   return (
     <div className="flex flex-col gap-6">
       {posts.length ? (
@@ -85,4 +48,4 @@ const Feed = async ({ username }: { username?: string }) => {
   );
 };
 
-export default Feed;
+export default ProfileFeed;
