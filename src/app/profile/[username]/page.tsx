@@ -1,6 +1,7 @@
 import ProfileFeed from "@/components/feed/ProfileFeed";
 import LeftMenu from "@/components/leftMenu/LeftMenu";
 import RightMenu from "@/components/rightMenu/RightMenu";
+import UserInfoCardInteraction from "@/components/rightMenu/UserInfoCardInteraction";
 import prisma from "@/lib/client";
 import { auth } from "@clerk/nextjs/server";
 import Image from "next/image";
@@ -29,18 +30,35 @@ const ProfilePage = async ({ params }: { params: { username: string } }) => {
   const { userId: currentUserId } = auth();
 
   let isBlocked;
+  let isUserBlocked = false;
+  let isFollowing = false;
+  let isFollowingSent = false;
 
   if (currentUserId) {
-    const res = await prisma.block.findFirst({
+    const blockRes = await prisma.block.findFirst({
       where: {
-        blockerId: user.id,
-        blockedId: currentUserId,
+        blockerId: currentUserId,
+        blockedId: user.id,
       },
     });
 
-    if (res) isBlocked = true;
-  } else {
-    isBlocked = false;
+    blockRes ? (isUserBlocked = true) : (isUserBlocked = false);
+    const followRes = await prisma.follower.findFirst({
+      where: {
+        followerId: currentUserId,
+        followingId: user.id,
+      },
+    });
+
+    followRes ? (isFollowing = true) : (isFollowing = false);
+    const followReqRes = await prisma.followRequest.findFirst({
+      where: {
+        senderId: currentUserId,
+        receiverId: user.id,
+      },
+    });
+
+    followReqRes ? (isFollowingSent = true) : (isFollowingSent = false);
   }
 
   if (isBlocked) return notFound();
@@ -88,6 +106,14 @@ const ProfilePage = async ({ params }: { params: { username: string } }) => {
               </div>
             </div>
           </div>
+          {currentUserId && currentUserId !== user.id && (
+          <UserInfoCardInteraction
+            userId={user.id}
+            isUserBlocked={isUserBlocked}
+            isFollowing={isFollowing}
+            isFollowingSent={isFollowingSent}
+          />
+        )}
           <ProfileFeed username={username} />
         </div>
       </div>
